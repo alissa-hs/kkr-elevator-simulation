@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elevator-sim"
+version = "0.1.0"
+description = "Discrete-time elevator simulation with LOOK routing and pluggable dispatch"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+elevator-sim = "elevator_sim.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["elevator_sim*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -22,12 +22,17 @@ def _reset_input_order() -> None:
 _order = itertools.count()
 
 
+# Building used by tests unless a test says otherwise (the spec's E2E baseline).
+# These are test conveniences only; SimConfig itself has no defaults for them.
+TEST_BUILDING = {"num_floors": 10, "num_elevators": 1, "capacity": 8, "start_floor": 1}
+
+
 def make_config(**overrides: Any):
-    """Build a SimConfig with invariant checks on by default."""
+    """Build a SimConfig on TEST_BUILDING with invariant checks on."""
     from elevator_sim.config import SimConfig
 
-    overrides.setdefault("check_invariants", True)
-    return SimConfig(**overrides)
+    settings = {**TEST_BUILDING, "check_invariants": True, **overrides}
+    return SimConfig(**settings)
 
 
 def req(time: int, passenger_id: str, source: int, dest: int):

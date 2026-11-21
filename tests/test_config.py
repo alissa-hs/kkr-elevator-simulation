@@ -11,7 +11,7 @@ def config(**overrides):
     return SimConfig(**{**BUILDING, **overrides})
 
 
-def test_cf1_fully_configured_is_valid_and_optional_fields_default():
+def test_fully_configured_is_valid_and_optional_fields_default():
     c = SimConfig(**BUILDING)
     assert (c.num_floors, c.num_elevators, c.capacity, c.start_floor) == (10, 1, 8, 1)
     assert c.scheduler == "nearest"
@@ -20,7 +20,7 @@ def test_cf1_fully_configured_is_valid_and_optional_fields_default():
     assert c.check_invariants is False
 
 
-def test_cf1b_nothing_configured_lists_every_missing_setting():
+def test_nothing_configured_lists_every_missing_setting():
     with pytest.raises(
         ConfigError,
         match=r"missing required setting\(s\): num_floors, num_elevators, capacity, start_floor",
@@ -29,13 +29,13 @@ def test_cf1b_nothing_configured_lists_every_missing_setting():
 
 
 @pytest.mark.parametrize("name", list(BUILDING))
-def test_cf1c_each_building_setting_is_required(name):
+def test_each_building_setting_is_required(name):
     settings = {k: v for k, v in BUILDING.items() if k != name}
     with pytest.raises(ConfigError, match=rf"missing required setting\(s\): {name}$"):
         SimConfig(**settings)
 
 
-def test_cf1d_explicit_none_counts_as_missing():
+def test_explicit_none_counts_as_missing():
     with pytest.raises(ConfigError, match="capacity"):
         config(capacity=None)
 
@@ -48,23 +48,23 @@ def test_cf1d_explicit_none_counts_as_missing():
         ({"capacity": 0}, "capacity"),
     ],
 )
-def test_cf2_minimums(kwargs, field):
+def test_settings_below_minimum_are_rejected(kwargs, field):
     with pytest.raises(ConfigError, match=field):
         config(**kwargs)
 
 
 @pytest.mark.parametrize("start_floor", [0, 11])
-def test_cf3_start_floor_out_of_range(start_floor):
+def test_start_floor_out_of_range(start_floor):
     with pytest.raises(ConfigError, match="start_floor"):
         config(start_floor=start_floor)
 
 
-def test_cf4_unknown_scheduler_lists_valid_names():
+def test_unknown_scheduler_lists_valid_names():
     with pytest.raises(ConfigError, match=r"unknown scheduler 'foo'; choose from: nearest"):
         config(scheduler="foo")
 
 
-def test_cf5_frozen():
+def test_config_is_read_only():
     c = config()
     with pytest.raises(dataclasses.FrozenInstanceError):
         c.num_floors = 20  # type: ignore[misc]

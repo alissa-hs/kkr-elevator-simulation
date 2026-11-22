@@ -1,4 +1,4 @@
-"""Request validation. CSV loading tests are added in step 9."""
+"""Request validation."""
 
 import pytest
 from conftest import make_config

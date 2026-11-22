@@ -1,4 +1,4 @@
-"""End-to-end scenarios, traced by hand in the spec. Invariant checks are on."""
+"""End-to-end scenarios with positions and times worked out by hand. Invariant checks are on."""
 
 import pytest
 from conftest import make_config, req, run_sim
@@ -38,7 +38,7 @@ def test_car_travels_to_passenger_then_reverses():
 def test_pdf_sample_shows_nearest_car_weakness():
     result, p = run_sim(
         [req(0, "passenger1", 1, 51), req(0, "passenger2", 1, 37), req(10, "passenger3", 20, 1)],
-        num_floors=60, num_elevators=2, capacity=10,
+        num_floors=100, num_elevators=2, capacity=10,
     )
     assert result.final_time == 100
     assert len(result.positions) == 101

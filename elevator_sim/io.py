@@ -1,4 +1,4 @@
-"""Input validation (and, from step 9, CSV loading and output writers)."""
+"""Input validation."""
 
 from __future__ import annotations
 

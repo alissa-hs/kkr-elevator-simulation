@@ -22,7 +22,7 @@ def _reset_input_order() -> None:
 _order = itertools.count()
 
 
-# Building used by tests unless a test says otherwise (the spec's E2E baseline).
+# Building used by tests unless a test says otherwise.
 # These are test conveniences only; SimConfig itself has no defaults for them.
 TEST_BUILDING = {"num_floors": 10, "num_elevators": 1, "capacity": 8, "start_floor": 1}
 

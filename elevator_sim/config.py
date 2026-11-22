@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
-class ConfigError(ValueError):
-    """Invalid simulation configuration."""
+from elevator_sim.dispatch import DISPATCHERS, unknown_scheduler_message
+from elevator_sim.errors import ConfigError
 
 
 def _is_int(value: object) -> bool:
@@ -41,9 +40,6 @@ class SimConfig:
 
     def validate(self) -> None:
         """Raise ConfigError listing every invalid field."""
-        # Imported here: dispatch imports ConfigError from this module.
-        from elevator_sim.dispatch import DISPATCHERS, unknown_scheduler_message
-
         missing = [name for name in REQUIRED_FIELDS if getattr(self, name) is None]
         if missing:
             raise ConfigError(f"missing required setting(s): {', '.join(missing)}")

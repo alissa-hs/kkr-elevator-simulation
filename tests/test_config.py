@@ -2,7 +2,8 @@ import dataclasses
 
 import pytest
 
-from elevator_sim.config import ConfigError, SimConfig
+from elevator_sim.config import SimConfig
+from elevator_sim.errors import ConfigError
 
 BUILDING = {"num_floors": 10, "num_elevators": 1, "capacity": 8, "start_floor": 1}
 

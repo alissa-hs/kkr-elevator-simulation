@@ -3,9 +3,9 @@ import copy
 import pytest
 from conftest import make_config
 
-from elevator_sim.config import ConfigError
 from elevator_sim.dispatch import Dispatcher, get_dispatcher
 from elevator_sim.dispatch.nearest import NearestCarDispatcher
+from elevator_sim.errors import ConfigError
 from elevator_sim.models import Direction, Elevator, Passenger
 
 

@@ -12,23 +12,21 @@ def _is_int(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
-REQUIRED_FIELDS = ("num_floors", "num_elevators", "capacity", "start_floor")
+REQUIRED_FIELDS = ("num_floors", "num_elevators", "capacity")
 
 
 @dataclass(frozen=True)
 class SimConfig:
     """Settings fixed for the whole run. Validated on creation.
 
-    The building fields (num_floors, num_elevators, capacity, start_floor) have
-    no defaults: they must always be configured. They are typed ``int | None``
-    only so a missing one can be reported as a ConfigError; after validation
-    they are always ints.
+    The building fields (num_floors, num_elevators, capacity) are the three
+    settings. They have no defaults: they must always be configured. A missing one can be
+    reported as a ConfigError.
     """
 
     num_floors: int | None = None
     num_elevators: int | None = None
     capacity: int | None = None
-    start_floor: int | None = None
     scheduler: str = "nearest"
     output_dir: str = "output"
     max_ticks: int | None = None
@@ -56,14 +54,6 @@ class SimConfig:
         check_min("num_floors", 2)
         check_min("num_elevators", 1)
         check_min("capacity", 1)
-
-        if not _is_int(self.start_floor):
-            errors.append(f"start_floor must be an integer, got {self.start_floor!r}")
-        elif _is_int(self.num_floors) and not 1 <= self.start_floor <= self.num_floors:
-            errors.append(
-                f"start_floor must be between 1 and num_floors ({self.num_floors}), "
-                f"got {self.start_floor}"
-            )
 
         if self.scheduler not in DISPATCHERS:
             errors.append(unknown_scheduler_message(self.scheduler))

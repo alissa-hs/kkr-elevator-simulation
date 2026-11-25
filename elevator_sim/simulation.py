@@ -14,6 +14,9 @@ from elevator_sim.models import Elevator, Passenger, PassengerState, Request
 from elevator_sim.routing import move, service_floor
 from elevator_sim.stream import RequestStream
 
+START_FLOOR = 1
+"""Assumption that every car starts at the ground floor."""
+
 
 @dataclass
 class ElevatorStats:
@@ -71,7 +74,7 @@ class Simulation:
         validate_requests(requests, config)
         self.config = config
         self.elevators = [
-            Elevator(id=i, floor=config.start_floor, capacity=config.capacity)
+            Elevator(id=i, floor=START_FLOOR, capacity=config.capacity)
             for i in range(config.num_elevators)
         ]
         self.stream = RequestStream(requests)

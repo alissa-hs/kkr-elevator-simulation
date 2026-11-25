@@ -5,7 +5,7 @@ import pytest
 from elevator_sim.config import SimConfig
 from elevator_sim.errors import ConfigError
 
-BUILDING = {"num_floors": 10, "num_elevators": 1, "capacity": 8, "start_floor": 1}
+BUILDING = {"num_floors": 10, "num_elevators": 1, "capacity": 8}
 
 
 def config(**overrides):
@@ -14,7 +14,7 @@ def config(**overrides):
 
 def test_fully_configured_is_valid_and_optional_fields_default():
     c = SimConfig(**BUILDING)
-    assert (c.num_floors, c.num_elevators, c.capacity, c.start_floor) == (10, 1, 8, 1)
+    assert (c.num_floors, c.num_elevators, c.capacity) == (10, 1, 8)
     assert c.scheduler == "nearest"
     assert c.output_dir == "output"
     assert c.max_ticks is None
@@ -24,7 +24,7 @@ def test_fully_configured_is_valid_and_optional_fields_default():
 def test_nothing_configured_lists_every_missing_setting():
     with pytest.raises(
         ConfigError,
-        match=r"missing required setting\(s\): num_floors, num_elevators, capacity, start_floor",
+        match=r"missing required setting\(s\): num_floors, num_elevators, capacity$",
     ):
         SimConfig()
 
@@ -54,10 +54,9 @@ def test_settings_below_minimum_are_rejected(kwargs, field):
         config(**kwargs)
 
 
-@pytest.mark.parametrize("start_floor", [0, 11])
-def test_start_floor_out_of_range(start_floor):
-    with pytest.raises(ConfigError, match="start_floor"):
-        config(start_floor=start_floor)
+def test_start_floor_is_not_a_setting():
+    with pytest.raises(TypeError, match="start_floor"):
+        config(start_floor=1)
 
 
 def test_unknown_scheduler_lists_valid_names():

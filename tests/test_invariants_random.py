@@ -23,7 +23,6 @@ def random_scenario(seed):
         "num_floors": num_floors,
         "num_elevators": rng.randint(1, 5),
         "capacity": rng.randint(1, 8),
-        "start_floor": rng.randint(1, num_floors),
     }
     requests = []
     for i in range(rng.randint(0, 60)):
@@ -82,7 +81,7 @@ def test_random_run_satisfies_all_checks(seed):
 
 def test_burst_at_one_floor_with_capacity_one():
     """Longest possible queue: one car carrying 60 people one at a time to the top."""
-    settings = {"num_floors": 30, "num_elevators": 1, "capacity": 1, "start_floor": 1}
+    settings = {"num_floors": 30, "num_elevators": 1, "capacity": 1}
     requests = [Request(0, f"p{i}", 1, 30, input_order=i) for i in range(60)]
     result = run(settings, requests)
     check_run(result, settings, requests)
@@ -95,7 +94,7 @@ def test_burst_at_one_floor_with_capacity_one():
 
 
 def test_everyone_going_opposite_ways_from_one_floor():
-    settings = {"num_floors": 20, "num_elevators": 2, "capacity": 3, "start_floor": 1}
+    settings = {"num_floors": 20, "num_elevators": 2, "capacity": 3}
     rng = random.Random(0)
     requests = [
         Request(rng.randint(0, 20), f"p{i}", 10, rng.randint(11, 20) if i % 2 else rng.randint(1, 9),
@@ -107,7 +106,7 @@ def test_everyone_going_opposite_ways_from_one_floor():
 
 
 def test_two_floor_building():
-    settings = {"num_floors": 2, "num_elevators": 3, "capacity": 2, "start_floor": 2}
+    settings = {"num_floors": 2, "num_elevators": 3, "capacity": 2}
     rng = random.Random(1)
     requests = [
         Request(rng.randint(0, 30), f"p{i}", 1 + i % 2, 2 - i % 2, input_order=i)

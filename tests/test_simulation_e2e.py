@@ -1,7 +1,7 @@
 """End-to-end scenarios with positions and times worked out by hand. Invariant checks are on."""
 
 import pytest
-from conftest import make_config, req, run_sim
+from conftest import SAMPLE_BUILDING, make_config, req, run_sim
 
 from elevator_sim.dispatch import Dispatcher
 from elevator_sim.errors import InputError, SimulationError
@@ -38,7 +38,7 @@ def test_car_travels_to_passenger_then_reverses():
 def test_pdf_sample_shows_nearest_car_weakness():
     result, p = run_sim(
         [req(0, "passenger1", 1, 51), req(0, "passenger2", 1, 37), req(10, "passenger3", 20, 1)],
-        num_floors=100, num_elevators=2, capacity=10,
+        **SAMPLE_BUILDING,
     )
     assert result.final_time == 100
     assert len(result.positions) == 101
@@ -89,11 +89,13 @@ def test_same_tick_pickup_from_a_moving_car():
 
 
 def test_opposite_directions_at_same_floor_idle_car():
-    result, p = run_sim([req(0, "a", 5, 9), req(0, "b", 5, 1)], start_floor=5)
-    assert floors(result) == [5, 6, 7, 8, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-    assert (p["a"].pickup_time, p["a"].dropoff_time) == (0, 4)
-    assert times(p["b"]) == (8, 12, 8, 4, 12)
-    assert result.final_time == 12
+    # "first" brings the car to floor 5, where it goes idle at tick 4.
+    # At tick 6 two passengers there want opposite ways; the older one (a) wins.
+    result, p = run_sim([req(0, "first", 1, 5), req(6, "a", 5, 9), req(6, "b", 5, 1)])
+    assert floors(result) == [1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+    assert (p["a"].pickup_time, p["a"].dropoff_time) == (6, 10)
+    assert times(p["b"]) == (14, 18, 8, 4, 12)
+    assert result.final_time == 18
 
 
 def test_second_car_is_closer():
@@ -115,8 +117,8 @@ def test_top_floor_boundary():
 
 
 def test_empty_input():
-    result, p = run_sim([], num_elevators=2, start_floor=5)
-    assert result.positions == [(0, [5, 5])]
+    result, p = run_sim([], num_elevators=2)
+    assert result.positions == [(0, [1, 1])]
     assert result.final_time == 0
     assert p == {}
 

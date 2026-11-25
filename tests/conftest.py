@@ -24,7 +24,9 @@ _order = itertools.count()
 
 # Building used by tests unless a test says otherwise.
 # These are test conveniences only; SimConfig itself has no defaults for them.
-TEST_BUILDING = {"num_floors": 10, "num_elevators": 1, "capacity": 8, "start_floor": 1}
+TEST_BUILDING = {"num_floors": 10, "num_elevators": 1, "capacity": 8}
+
+SAMPLE_BUILDING = {"num_floors": 100, "num_elevators": 2, "capacity": 10}
 
 
 def make_config(**overrides: Any):
@@ -57,3 +59,12 @@ def run_sim(requests: list, dispatcher=None, **config: Any):
 
     result = Simulation(make_config(**config), requests, dispatcher=dispatcher).run()
     return result, {p.id: p for p in result.passengers}
+
+
+def pdf_sample_result():
+    """The PDF's three requests run in SAMPLE_BUILDING."""
+    result, _ = run_sim(
+        [req(0, "passenger1", 1, 51), req(0, "passenger2", 1, 37), req(10, "passenger3", 20, 1)],
+        **SAMPLE_BUILDING,
+    )
+    return result

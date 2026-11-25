@@ -3,23 +3,11 @@
 import copy
 
 import pytest
-from conftest import make_config, req, run_sim
+from conftest import make_config, pdf_sample_result, run_sim
 
 from elevator_sim.metrics import Stats, compute_stats, compute_summary
 from elevator_sim.models import Passenger, PassengerState
 from elevator_sim.simulation import ElevatorStats, SimulationResult
-
-# The PDF gives only the requests. 100 floors is a realistic tall building that covers
-# the highest one (51); two cars give the dispatcher a choice; capacity 10 never fills.
-SAMPLE_BUILDING = {"num_floors": 100, "num_elevators": 2, "capacity": 10}
-
-
-def pdf_sample_result():
-    result, _ = run_sim(
-        [req(0, "passenger1", 1, 51), req(0, "passenger2", 1, 37), req(10, "passenger3", 20, 1)],
-        **SAMPLE_BUILDING,
-    )
-    return result
 
 
 def delivered(pid, request_time, pickup, dropoff, input_order):

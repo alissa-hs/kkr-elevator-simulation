@@ -79,7 +79,7 @@ def test_passengers_csv_for_pdf_sample():
 
 def test_summary_csv_for_pdf_sample():
     assert read_lines(write(pdf_sample_result()), "summary.csv") == [
-        "measure,min,max,mean,median,p95,passengers,final_time,scheduler,longest_wait_passenger",
+        "measure,min,max,mean,median,p95,passengers,final_time,dispatcher,longest_wait_passenger",
         "wait,0,71,23.67,0.00,71,3,100,nearest,passenger3",
         "travel,19,50,35.00,36.00,50,3,100,nearest,passenger3",
         "total,36,90,58.67,50.00,90,3,100,nearest,passenger3",

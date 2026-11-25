@@ -48,7 +48,7 @@ def test_longest_wait_tie_goes_to_earliest_request():
     earlier = delivered("earlier", request_time=0, pickup=5, dropoff=7, input_order=0)
     result = SimulationResult(
         config=make_config(), positions=[], passengers=[later, earlier], final_time=12,
-        scheduler_name="nearest", elevator_stats=[],
+        dispatcher_name="nearest", elevator_stats=[],
     )
     assert compute_summary(result).max_wait_passenger_id == "earlier"
 
@@ -57,7 +57,7 @@ def test_summary_includes_per_car_stats():
     summary = compute_summary(pdf_sample_result())
     assert summary.passenger_count == 3
     assert summary.final_time == 100
-    assert summary.scheduler_name == "nearest"
+    assert summary.dispatcher_name == "nearest"
     assert summary.max_wait_passenger_id == "passenger3"
     assert summary.elevators == (
         ElevatorStats(elevator_id=0, served=3, moving_ticks=100, idle_ticks=1, stops=5, peak_load=2),

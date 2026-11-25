@@ -164,13 +164,13 @@ def test_dispatcher_only_sees_requests_at_their_own_time():
 
 def test_result_reports_injected_dispatcher_name():
     result, _ = run_sim([req(0, "a", 1, 3)], dispatcher=RecordingDispatcher(make_config()))
-    assert result.scheduler_name == "recording"
-    assert result.config.scheduler == "nearest"
+    assert result.dispatcher_name == "recording"
+    assert result.config.dispatcher == "nearest"
 
 
 def test_default_dispatcher_comes_from_config():
     result, _ = run_sim([req(0, "a", 1, 3)])
-    assert result.scheduler_name == "nearest"
+    assert result.dispatcher_name == "nearest"
 
 
 @pytest.mark.parametrize("bad_answer", [2, -1, True, "0"])

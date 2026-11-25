@@ -47,11 +47,11 @@ class SimulationResult:
     """Every passenger, oldest first (by sort_key)."""
     final_time: int
     """Last logged tick: the first tick where everyone was delivered."""
-    scheduler_name: str
+    dispatcher_name: str
     """Name of the dispatcher actually used (``dispatcher.name``).
 
-    This takes precedence over ``config.scheduler``: when a dispatcher is
-    passed to Simulation, ``config.scheduler`` is ignored and may differ.
+    Normally equal to ``config.dispatcher``. Tests that pass a Dispatcher
+    object to Simulation get that object's name here instead.
     """
     elevator_stats: list[ElevatorStats]
     """One per elevator; index = elevator id."""
@@ -60,8 +60,9 @@ class SimulationResult:
 class Simulation:
     """Runs requests through the building one tick at a time.
 
-    If ``dispatcher`` is given it is used and ``config.scheduler`` is ignored;
-    otherwise the dispatcher comes from the registry by ``config.scheduler``.
+    The dispatcher comes from the registry by ``config.dispatcher``. Passing a
+    Dispatcher object instead is for tests only (e.g. one that records every call);
+    ``simulate()`` and the CLI accept only a registered name.
     """
 
     def __init__(
@@ -79,7 +80,7 @@ class Simulation:
         ]
         self.stream = RequestStream(requests)
         self.dispatcher = dispatcher if dispatcher is not None else get_dispatcher(
-            config.scheduler, config
+            config.dispatcher, config
         )
         self.passengers: list[Passenger] = []
         self.stats = [ElevatorStats(elevator_id=e.id) for e in self.elevators]
@@ -109,7 +110,7 @@ class Simulation:
                     positions=positions,
                     passengers=sorted(self.passengers, key=lambda p: p.sort_key),
                     final_time=t,
-                    scheduler_name=self.dispatcher.name,
+                    dispatcher_name=self.dispatcher.name,
                     elevator_stats=self.stats,
                 )
             self._check_guards(t, starvation_limit)

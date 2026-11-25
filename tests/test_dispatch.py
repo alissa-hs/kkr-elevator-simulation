@@ -95,7 +95,7 @@ def test_get_dispatcher_returns_registered_strategy():
 
 
 def test_get_dispatcher_rejects_unknown_name():
-    with pytest.raises(ConfigError, match=r"unknown scheduler 'x'; choose from: nearest"):
+    with pytest.raises(ConfigError, match=r"unknown dispatcher 'x'; choose from: nearest"):
         get_dispatcher("x", make_config())
 
 

@@ -19,8 +19,8 @@ DISPATCHERS: dict[str, type[Dispatcher]] = {
 }
 
 
-def unknown_scheduler_message(name: str) -> str:
-    return f"unknown scheduler '{name}'; choose from: {', '.join(DISPATCHERS)}"
+def unknown_dispatcher_message(name: str) -> str:
+    return f"unknown dispatcher '{name}'; choose from: {', '.join(DISPATCHERS)}"
 
 
 def get_dispatcher(name: str, config: SimConfig) -> Dispatcher:
@@ -28,8 +28,8 @@ def get_dispatcher(name: str, config: SimConfig) -> Dispatcher:
     try:
         cls = DISPATCHERS[name]
     except KeyError:
-        raise ConfigError(unknown_scheduler_message(name)) from None
+        raise ConfigError(unknown_dispatcher_message(name)) from None
     return cls(config)
 
 
-__all__ = ["DISPATCHERS", "Dispatcher", "get_dispatcher", "unknown_scheduler_message"]
+__all__ = ["DISPATCHERS", "Dispatcher", "get_dispatcher", "unknown_dispatcher_message"]

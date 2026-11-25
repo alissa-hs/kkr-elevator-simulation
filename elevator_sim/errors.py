@@ -6,7 +6,7 @@ without creating an import cycle.
 
 
 class ConfigError(ValueError):
-    """Invalid simulation configuration (bad or missing settings, unknown scheduler)."""
+    """Invalid simulation configuration (bad or missing settings, unknown dispatcher)."""
 
 
 class InputError(ValueError):

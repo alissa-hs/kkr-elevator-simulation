@@ -29,7 +29,7 @@ PASSENGER_COLUMNS = (
 )
 SUMMARY_COLUMNS = (
     "measure", "min", "max", "mean", "median", "p95",
-    "passengers", "final_time", "scheduler", "longest_wait_passenger",
+    "passengers", "final_time", "dispatcher", "longest_wait_passenger",
 )
 ELEVATOR_COLUMNS = ("elevator", "served", "moving_ticks", "idle_ticks", "stops", "peak_load")
 
@@ -52,7 +52,7 @@ def write_outputs(result: SimulationResult) -> list[Path]:
         for p in result.passengers
     ]
 
-    run_facts = (summary.passenger_count, summary.final_time, summary.scheduler_name,
+    run_facts = (summary.passenger_count, summary.final_time, summary.dispatcher_name,
                  _blank_if_none(summary.max_wait_passenger_id))
     stats_rows = [SUMMARY_COLUMNS]
     stats_rows += [

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from elevator_sim.dispatch import DISPATCHERS, unknown_scheduler_message
+from elevator_sim.dispatch import DISPATCHERS, unknown_dispatcher_message
 from elevator_sim.errors import ConfigError
 
 
@@ -27,7 +27,7 @@ class SimConfig:
     num_floors: int | None = None
     num_elevators: int | None = None
     capacity: int | None = None
-    scheduler: str = "nearest"
+    dispatcher: str = "nearest"
     check_invariants: bool = False
     """Run the consistency checks after every tick. Used by tests; not a CLI option."""
 
@@ -53,8 +53,8 @@ class SimConfig:
         check_min("num_elevators", 1)
         check_min("capacity", 1)
 
-        if self.scheduler not in DISPATCHERS:
-            errors.append(unknown_scheduler_message(self.scheduler))
+        if self.dispatcher not in DISPATCHERS:
+            errors.append(unknown_dispatcher_message(self.dispatcher))
 
         if errors:
             raise ConfigError("; ".join(errors))

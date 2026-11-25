@@ -47,7 +47,7 @@ def compute_stats(values: Sequence[int]) -> Stats:
 class Summary:
     passenger_count: int
     final_time: int
-    scheduler_name: str
+    dispatcher_name: str
     wait: Stats
     travel: Stats
     total: Stats
@@ -63,7 +63,7 @@ def compute_summary(result: SimulationResult) -> Summary:
     return Summary(
         passenger_count=len(passengers),
         final_time=result.final_time,
-        scheduler_name=result.scheduler_name,
+        dispatcher_name=result.dispatcher_name,
         wait=compute_stats([p.wait_time for p in passengers]),
         travel=compute_stats([p.travel_time for p in passengers]),
         total=compute_stats([p.total_time for p in passengers]),

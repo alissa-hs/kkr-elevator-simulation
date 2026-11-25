@@ -15,7 +15,7 @@ def config(**overrides):
 def test_fully_configured_is_valid_and_optional_fields_default():
     c = SimConfig(**BUILDING)
     assert (c.num_floors, c.num_elevators, c.capacity) == (10, 1, 8)
-    assert c.scheduler == "nearest"
+    assert c.dispatcher == "nearest"
     assert c.check_invariants is False
 
 
@@ -57,9 +57,9 @@ def test_start_floor_is_not_a_setting():
         config(start_floor=1)
 
 
-def test_unknown_scheduler_lists_valid_names():
-    with pytest.raises(ConfigError, match=r"unknown scheduler 'foo'; choose from: nearest"):
-        config(scheduler="foo")
+def test_unknown_dispatcher_lists_valid_names():
+    with pytest.raises(ConfigError, match=r"unknown dispatcher 'foo'; choose from: nearest"):
+        config(dispatcher="foo")
 
 
 def test_config_is_read_only():
@@ -75,6 +75,6 @@ def test_bool_is_not_an_int():
 
 def test_reports_every_bad_field():
     with pytest.raises(ConfigError) as exc:
-        config(num_floors=1, capacity=0, scheduler="foo")
+        config(num_floors=1, capacity=0, dispatcher="foo")
     msg = str(exc.value)
     assert "num_floors" in msg and "capacity" in msg and "foo" in msg

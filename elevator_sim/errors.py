@@ -16,6 +16,6 @@ class InputError(ValueError):
 class SimulationError(RuntimeError):
     """The simulation reached a state that should be impossible.
 
-    Raised by guards (starvation, max_ticks), invariant checks, an invalid
+    Raised by the starvation guard, invariant checks, an invalid
     dispatcher answer, or a car moving outside the building.
     """

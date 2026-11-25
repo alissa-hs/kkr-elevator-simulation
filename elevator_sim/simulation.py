@@ -151,17 +151,10 @@ class Simulation:
                 stats.moving_ticks += 1
 
     def _check_guards(self, t: int, starvation_limit: int) -> None:
-        """Stop runaway runs: starvation always, max_ticks when set."""
+        """Stop a runaway run: no passenger may stay undelivered past the starvation limit."""
         for p in self.passengers:
             if p.state is not PassengerState.DELIVERED and t - p.request_time > starvation_limit:
                 raise SimulationError(
                     f"tick {t}: passenger '{p.id}' has waited {t - p.request_time} ticks, "
                     f"over the starvation limit of {starvation_limit}"
                 )
-        if self.config.max_ticks is not None and t == self.config.max_ticks:
-            undelivered = sum(p.state is not PassengerState.DELIVERED for p in self.passengers)
-            raise SimulationError(
-                f"reached max_ticks={self.config.max_ticks} with {undelivered} passenger(s) "
-                f"undelivered"
-                + ("" if self.stream.exhausted else " and requests still to come")
-            )

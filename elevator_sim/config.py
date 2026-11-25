@@ -28,10 +28,8 @@ class SimConfig:
     num_elevators: int | None = None
     capacity: int | None = None
     scheduler: str = "nearest"
-    output_dir: str = "output"
-    max_ticks: int | None = None
-    """Largest allowed final_time (inclusive). None = no global cap."""
     check_invariants: bool = False
+    """Run the consistency checks after every tick. Used by tests; not a CLI option."""
 
     def __post_init__(self) -> None:
         self.validate()
@@ -57,9 +55,6 @@ class SimConfig:
 
         if self.scheduler not in DISPATCHERS:
             errors.append(unknown_scheduler_message(self.scheduler))
-
-        if self.max_ticks is not None:
-            check_min("max_ticks", 1)
 
         if errors:
             raise ConfigError("; ".join(errors))

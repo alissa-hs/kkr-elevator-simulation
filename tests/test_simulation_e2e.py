@@ -123,16 +123,14 @@ def test_empty_input():
     assert p == {}
 
 
-@pytest.mark.parametrize("max_ticks", [3, 7])
-def test_max_ticks_below_final_time_raises(max_ticks):
-    with pytest.raises(SimulationError, match=f"max_ticks={max_ticks}"):
-        run_sim([req(0, "p1", 5, 1)], max_ticks=max_ticks)
-
-
-def test_max_ticks_equal_to_final_time_succeeds():
-    result, _ = run_sim([req(0, "p1", 5, 1)], max_ticks=8)
-    assert result.final_time == 8
-    assert len(result.positions) == 9
+def test_stuck_car_trips_the_starvation_guard(monkeypatch):
+    # Cars that never move can't reach floor 5. Limit = 2 * 10 floors * (1 passenger + 1) = 40.
+    monkeypatch.setattr("elevator_sim.simulation.move", lambda elevator, num_floors: None)
+    with pytest.raises(
+        SimulationError,
+        match=r"^tick 41: passenger 'p1' has waited 41 ticks, over the starvation limit of 40$",
+    ):
+        run_sim([req(0, "p1", 5, 1)])
 
 
 def test_per_elevator_stats():

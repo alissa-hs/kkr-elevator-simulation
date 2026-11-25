@@ -7,12 +7,16 @@ simulation itself imports io for request validation.
 from __future__ import annotations
 
 import csv
+import re
 from collections.abc import Iterable
-from os import PathLike
 from pathlib import Path
 
 from elevator_sim.metrics import Stats, compute_summary
 from elevator_sim.simulation import SimulationResult
+
+OUTPUT_DIR = Path("output")
+"""Relative to the folder the program is run from. Each run gets its own run_NNN folder inside."""
+RUN_FOLDER = re.compile(r"run_([0-9]+)")
 
 POSITIONS_FILE = "positions.csv"
 PASSENGERS_FILE = "passengers.csv"
@@ -30,10 +34,11 @@ SUMMARY_COLUMNS = (
 ELEVATOR_COLUMNS = ("elevator", "served", "moving_ticks", "idle_ticks", "stops", "peak_load")
 
 
-def write_outputs(result: SimulationResult, output_dir: str | PathLike[str]) -> list[Path]:
-    """Write the four CSV files into ``output_dir`` (created if missing) and return their paths."""
-    folder = Path(output_dir)
-    folder.mkdir(parents=True, exist_ok=True)
+def write_outputs(result: SimulationResult) -> list[Path]:
+    """Write the four CSV files into a new ``output/run_NNN`` folder and return their paths.
+
+    NNN is one more than the highest existing run number, so earlier runs are kept.
+    """
     summary = compute_summary(result)
     num_elevators = len(result.elevator_stats)
 
@@ -68,12 +73,26 @@ def write_outputs(result: SimulationResult, output_dir: str | PathLike[str]) -> 
         SUMMARY_FILE: stats_rows,
         ELEVATORS_FILE: elevators,
     }
+    folder = _new_run_folder()
     paths = []
     for name, rows in files.items():
         path = folder / name
         _write_csv(path, rows)
         paths.append(path)
     return paths
+
+
+def _new_run_folder() -> Path:
+    """Create and return output/run_NNN, numbered one past the highest existing run."""
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    numbers = [
+        int(match.group(1))
+        for entry in OUTPUT_DIR.iterdir()
+        if entry.is_dir() and (match := RUN_FOLDER.fullmatch(entry.name))
+    ]
+    folder = OUTPUT_DIR / f"run_{max(numbers, default=0) + 1:03d}"
+    folder.mkdir()
+    return folder
 
 
 def _write_csv(path: Path, rows: Iterable[Iterable[object]]) -> None:

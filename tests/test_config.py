@@ -16,8 +16,6 @@ def test_fully_configured_is_valid_and_optional_fields_default():
     c = SimConfig(**BUILDING)
     assert (c.num_floors, c.num_elevators, c.capacity) == (10, 1, 8)
     assert c.scheduler == "nearest"
-    assert c.output_dir == "output"
-    assert c.max_ticks is None
     assert c.check_invariants is False
 
 
@@ -68,12 +66,6 @@ def test_config_is_read_only():
     c = config()
     with pytest.raises(dataclasses.FrozenInstanceError):
         c.num_floors = 20  # type: ignore[misc]
-
-
-def test_max_ticks_must_be_positive():
-    with pytest.raises(ConfigError, match="max_ticks"):
-        config(max_ticks=0)
-    assert config(max_ticks=1).max_ticks == 1
 
 
 def test_bool_is_not_an_int():

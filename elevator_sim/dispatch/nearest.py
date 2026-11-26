@@ -16,6 +16,11 @@ class NearestCarDispatcher(Dispatcher):
     """
 
     name = "nearest"
+    label = "Nearest elevator"
+    description = (
+        "Each new request goes to the elevator closest to the passenger's floor, "
+        "ignoring which way it is heading. Ties go to an idle elevator, then the lowest number."
+    )
 
     def assign(self, passenger: Passenger, elevators: Sequence[Elevator], t: int) -> int:
         best = min(

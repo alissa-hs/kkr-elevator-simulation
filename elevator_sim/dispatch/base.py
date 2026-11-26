@@ -20,6 +20,10 @@ class Dispatcher(ABC):
     """
 
     name: ClassVar[str]
+    label: ClassVar[str] = ""
+    """Human-readable name for reports, e.g. "Nearest elevator"."""
+    description: ClassVar[str] = ""
+    """One sentence on how this dispatcher chooses, for reports."""
 
     def __init__(self, config: SimConfig) -> None:
         self.config = config

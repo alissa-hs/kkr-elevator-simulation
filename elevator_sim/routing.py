@@ -14,6 +14,12 @@ from dataclasses import dataclass
 from elevator_sim.errors import SimulationError
 from elevator_sim.models import Direction, Elevator, PassengerState
 
+ROUTING_NAME = "LOOK"
+ROUTING_DESCRIPTION = (
+    "Each elevator keeps moving in its current direction while it has stops ahead, "
+    "picks up passengers going the same way, and reverses only when nothing is left ahead."
+)
+
 
 @dataclass(frozen=True)
 class ServiceResult:

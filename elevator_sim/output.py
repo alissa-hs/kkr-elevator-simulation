@@ -1,4 +1,4 @@
-"""Writing a finished run to CSV files.
+"""Writing a finished run to CSV files and an HTML report.
 
 Kept apart from io.py because it needs metrics (and so simulation), while
 simulation itself imports io for request validation.
@@ -12,6 +12,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from elevator_sim.metrics import Stats, compute_summary
+from elevator_sim.report import REPORT_FILE, build_report
 from elevator_sim.simulation import SimulationResult
 
 OUTPUT_DIR = Path("output")
@@ -35,7 +36,9 @@ ELEVATOR_COLUMNS = ("elevator", "served", "moving_ticks", "idle_ticks", "stops",
 
 
 def write_outputs(result: SimulationResult) -> list[Path]:
-    """Write the four CSV files into a new ``output/run_NNN`` folder and return their paths.
+    """Write the four CSV files and report.html into a new ``output/run_NNN`` folder.
+
+    Returns the five paths, CSVs first.
 
     NNN is one more than the highest existing run number, so earlier runs are kept.
     """
@@ -73,12 +76,18 @@ def write_outputs(result: SimulationResult) -> list[Path]:
         SUMMARY_FILE: stats_rows,
         ELEVATORS_FILE: elevators,
     }
+    report = build_report(result)  # built before the folder, so a failure leaves no empty run
+
     folder = _new_run_folder()
     paths = []
     for name, rows in files.items():
         path = folder / name
         _write_csv(path, rows)
         paths.append(path)
+    report_path = folder / REPORT_FILE
+    with open(report_path, "w", newline="", encoding="utf-8") as f:
+        f.write(report)
+    paths.append(report_path)
     return paths
 
 

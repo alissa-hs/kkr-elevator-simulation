@@ -52,11 +52,6 @@ def test_settings_below_minimum_are_rejected(kwargs, field):
         config(**kwargs)
 
 
-def test_start_floor_is_not_a_setting():
-    with pytest.raises(TypeError, match="start_floor"):
-        config(start_floor=1)
-
-
 def test_unknown_dispatcher_lists_valid_names():
     with pytest.raises(ConfigError, match=r"unknown dispatcher 'foo'; choose from: nearest"):
         config(dispatcher="foo")

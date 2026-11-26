@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elevator Simulation Report</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb;
+    --page: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --series: #2a78d6;
+    --on-series: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface: #1a1a19;
+      --page: #0d0d0d;
+      --ink: #f0efec;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --series: #3987e5;
+      --on-series: #ffffff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 32px 0 4px; }
+  .run-info, .note { color: var(--ink-2); margin: 0 0 8px; }
+  .algos { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 16px 0 8px; }
+  .algo {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 4px solid var(--series); border-radius: 6px; padding: 12px 14px;
+  }
+  .algo-kind { color: var(--ink-2); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .algo-name { font-size: 20px; font-weight: 700; margin: 2px 0 4px; }
+  .algo-text { color: var(--ink-2); margin: 0; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+  }
+  table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .scroll { max-height: 420px; overflow: auto; padding-top: 0; }
+  .scroll th { position: sticky; top: 0; background: var(--surface); padding-top: 12px; }
+  th, td { padding: 4px 14px 4px 0; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  .passengers th:nth-child(2), .passengers td:nth-child(2) { text-align: left; }
+  th { color: var(--ink-2); font-weight: 600; border-bottom: 1px solid var(--axis); }
+  td { border-bottom: 1px solid var(--grid); }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  svg .label { fill: var(--ink-2); font-size: 12px; }
+  .grid { stroke: var(--grid); stroke-width: 1; }
+  .axis { stroke: var(--axis); stroke-width: 1; }
+  .line { fill: none; stroke: var(--series); stroke-width: 2; stroke-linejoin: round; }
+  .bar { fill: var(--series); }
+  .bar:hover, .bar.active { opacity: 0.75; }
+  .ref { stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .ref-solid { stroke: var(--ink); stroke-width: 1.5; }
+  .crosshair { stroke: var(--ink-2); stroke-width: 1; }
+  .car { fill: var(--series); }
+  .car-text { fill: var(--on-series); font-size: 11px; font-weight: 600; }
+  .shaft { fill: none; stroke: var(--grid); stroke-width: 1; }
+  .tooltip {
+    position: fixed; pointer-events: none; display: none; z-index: 10;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    padding: 6px 8px; font-size: 12px; line-height: 1.4;
+    font-variant-numeric: tabular-nums; white-space: pre;
+  }
+  .controls { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+  .controls button {
+    font: inherit; padding: 4px 14px; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--axis); background: var(--page); color: var(--ink);
+  }
+  .controls input[type="range"] { flex: 1; min-width: 160px; accent-color: var(--series); }
+  .controls output { font-variant-numeric: tabular-nums; color: var(--ink-2); min-width: 110px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Elevator simulation report</h1>
+  <p class="run-info">{{RUN_INFO}}</p>
+  <div class="algos">{{ALGORITHMS}}</div>
+
+  <h2>Passenger times</h2>
+  <p class="note">Wait = request to pickup. Travel = pickup to dropoff. Total = request to dropoff.</p>
+  <div class="panel">
+    {{METRICS_TABLE}}
+    <p class="note" style="margin: 8px 0 0">{{LONGEST_WAIT}}</p>
+    <p class="note" style="margin: 4px 0 0">{{WORST_CASE}}</p>
+    <p class="note" style="margin: 4px 0 0">The simulation stops with an error if any passenger goes longer than this from request to dropoff.</p>
+  </div>
+
+  <h2>Elevators</h2>
+  <div class="panel">{{ELEVATORS_TABLE}}</div>
+
+  <div id="charts">
+    <h2>Elevator positions over time</h2>
+    <p class="note">The floor each elevator is on at every tick, one row per elevator. Rising = going up, falling = going down, flat = standing still.</p>
+    <div class="panel"><svg id="positions" role="img" aria-label="Floor of each elevator at every tick"></svg></div>
+
+    <h2>Total times</h2>
+    <p class="note">How many passengers took each length of time from request to dropoff (total = wait + travel). Dashed line: mean. Solid line: p95.</p>
+    <div class="panel"><svg id="totals" role="img" aria-label="Histogram of passenger total times"></svg></div>
+
+    <h2>Playback</h2>
+    <p class="note">Each column is one elevator's shaft; the number on an elevator is how many people are riding.</p>
+    <div class="panel">
+      <div class="controls">
+        <button id="play" type="button">Play</button>
+        <input id="tick" type="range" min="0" value="0" aria-label="Tick">
+        <output id="tick-label"></output>
+      </div>
+      <svg id="building" role="img" aria-label="Animated view of the elevators moving between floors"></svg>
+    </div>
+  </div>
+  <p id="no-passengers" class="note" hidden>No passengers in this run, so there is nothing to chart.</p>
+
+  <h2>Passengers</h2>
+  <p class="note">Each request (time, id, source, dest) and what happened to it, earliest request first. Same as passengers.csv.</p>
+  <div class="panel scroll">{{PASSENGERS_TABLE}}</div>
+</main>
+<div class="tooltip" id="tooltip"></div>
+
+<script type="application/json" id="run-data">{{DATA_JSON}}</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById("run-data").textContent);
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const W = 900;  // drawing width in SVG units; the SVG scales to fit its panel
+  const tooltip = document.getElementById("tooltip");
+
+  if (D.totals.length === 0) {
+    document.getElementById("charts").hidden = true;
+    document.getElementById("no-passengers").hidden = false;
+    return;
+  }
+
+  function el(tag, attrs, parent) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function text(parent, x, y, content, attrs = {}) {
+    const t = el("text", { x, y, ...attrs }, parent);
+    t.textContent = content;
+    return t;
+  }
+  function showTip(evt, lines) {
+    tooltip.textContent = lines.join("\n");
+    tooltip.style.display = "block";
+    const pad = 14;
+    let x = evt.clientX + pad, y = evt.clientY + pad;
+    const r = tooltip.getBoundingClientRect();
+    if (x + r.width > window.innerWidth) x = evt.clientX - r.width - pad;
+    if (y + r.height > window.innerHeight) y = evt.clientY - r.height - pad;
+    tooltip.style.left = x + "px";
+    tooltip.style.top = y + "px";
+  }
+  function hideTip() { tooltip.style.display = "none"; }
+  // Round-number ticks from 0 to max. Steps are whole numbers (ticks, floors and
+  // passenger counts are never fractional).
+  function niceTicks(max, count) {
+    if (max <= 0) return [0];
+    const raw = Math.max(1, max / count);
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * mag)
+      .find(s => s >= raw && Number.isInteger(s));
+    const ticks = [];
+    for (let v = 0; v <= max; v += step) ticks.push(v);
+    return ticks;
+  }
+  // Evenly spaced round ticks that run past max to the next round number
+  // (e.g. max 77 with a step of 5 gives 0, 5, ..., 75, 80). The last tick is the axis end.
+  function roundedTicks(max, count) {
+    const ticks = niceTicks(max, count);
+    const step = ticks.length > 1 ? ticks[1] - ticks[0] : 1;
+    const end = Math.max(step, Math.ceil(max / step) * step);
+    const out = [];
+    for (let v = 0; v <= end; v += step) out.push(v);
+    return out;
+  }
+  // Like niceTicks, but always ends exactly on max so the axis covers all the data.
+  // Used for floors, where the top floor is a hard limit (there is no floor above it).
+  // A round tick too close to max is dropped so the two labels don't overlap.
+  function ticksToEnd(max, count) {
+    const ticks = niceTicks(max, count);
+    if (ticks.length > 1) {
+      const step = ticks[1] - ticks[0];
+      if (ticks[ticks.length - 1] !== max && max - ticks[ticks.length - 1] < step * 0.5) ticks.pop();
+    }
+    if (ticks[ticks.length - 1] !== max) ticks.push(max);
+    return ticks;
+  }
+  function svgPoint(svg, evt) {
+    const p = svg.createSVGPoint();
+    p.x = evt.clientX; p.y = evt.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  const cars = D.positions.length;
+  const T = D.finalTime;
+
+  // Riders per elevator per tick: a passenger rides at tick t when pickup <= t < dropoff.
+  const loads = D.positions.map(() => new Array(T + 2).fill(0));
+  for (const [car, pickup, dropoff] of D.rides) { loads[car][pickup] += 1; loads[car][dropoff] -= 1; }
+  for (const row of loads) for (let t = 1; t < row.length; t++) row[t] += row[t - 1];
+
+  // ---- Elevator positions: one small chart per elevator, shared axes ----
+  (function positions() {
+    const svg = document.getElementById("positions");
+    const left = 128, right = 16, rowH = 120, gap = 28, top = 8, bottom = 34;
+    const plotW = W - left - right;
+    const H = top + cars * rowH + (cars - 1) * gap + bottom;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const tickTicks = roundedTicks(T, 16);
+    const xEnd = tickTicks[tickTicks.length - 1];  // round number at or past the final tick
+    const x = t => left + (t / xEnd) * plotW;
+    const y = (row, floor) => top + row * (rowH + gap) + rowH - ((floor - 1) / (D.floors - 1)) * rowH;
+
+    // Floors 1 .. top floor in round steps (0 is not a floor, so the first tick is 1).
+    const floorTicks = ticksToEnd(D.floors, 5).map(f => Math.max(1, f))
+      .filter((f, i, a) => a.indexOf(f) === i);
+    const axisY = top + cars * rowH + (cars - 1) * gap;
+
+    for (let c = 0; c < cars; c++) {
+      const y0 = top + c * (rowH + gap);
+      for (const t of tickTicks) {
+        el("line", { x1: x(t), x2: x(t), y1: y0, y2: y0 + rowH, class: "grid" }, svg);
+      }
+      for (const f of floorTicks) {
+        el("line", { x1: left, x2: left + plotW, y1: y(c, f), y2: y(c, f), class: f === 1 ? "axis" : "grid" }, svg);
+        text(svg, left - 6, y(c, f) + 4, String(f), { "text-anchor": "end" });
+      }
+      text(svg, 0, y0 + rowH / 2 + 4, `Elevator ${c}`, { class: "label" });
+      const titleX = left - 34, titleY = y0 + rowH / 2;
+      text(svg, titleX, titleY, "floor",
+           { "text-anchor": "middle", transform: `rotate(-90 ${titleX} ${titleY})` });
+      const pts = D.positions[c].map((f, t) => `${x(t).toFixed(1)},${y(c, f).toFixed(1)}`);
+      el("polyline", { points: pts.join(" "), class: "line" }, svg);
+    }
+    for (const t of tickTicks) {
+      text(svg, x(t), axisY + 16, String(t), { "text-anchor": "middle" });
+    }
+    text(svg, left + plotW / 2, axisY + 31, "tick", { "text-anchor": "middle" });
+
+    const cross = el("line", { y1: top, y2: axisY, class: "crosshair", visibility: "hidden" }, svg);
+    const hit = el("rect", { x: left, y: 0, width: plotW, height: axisY, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", evt => {
+      const p = svgPoint(svg, evt);
+      const t = Math.max(0, Math.min(T, Math.round(((p.x - left) / plotW) * xEnd)));
+      cross.setAttribute("x1", x(t)); cross.setAttribute("x2", x(t));
+      cross.setAttribute("visibility", "visible");
+      const shown = Math.min(cars, 12);
+      const lines = [`tick ${t}`];
+      for (let c = 0; c < shown; c++) {
+        lines.push(`elevator ${c}: floor ${D.positions[c][t]}, ${loads[c][t]} riding`);
+      }
+      if (cars > shown) lines.push(`… ${cars - shown} more elevators`);
+      showTip(evt, lines);
+    });
+    hit.addEventListener("mouseleave", () => { cross.setAttribute("visibility", "hidden"); hideTip(); });
+  })();
+
+  // ---- Total-time histogram ----
+  (function totals() {
+    const svg = document.getElementById("totals");
+    const left = 64, right = 12, top = 40, bottom = 34, plotH = 200;
+    const plotW = W - left - right;
+    const H = top + plotH + bottom;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+    const maxTotal = Math.max(...D.totals);
+    // One bar per tick. Only very long times (over MAX_BARS ticks) are grouped,
+    // and then the axis title says how many ticks each bar covers.
+    const MAX_BARS = 200;
+    const binWidth = Math.max(1, Math.ceil((maxTotal + 1) / MAX_BARS));
+    const bins = new Array(Math.ceil((maxTotal + 1) / binWidth)).fill(0);
+    for (const v of D.totals) bins[Math.floor(v / binWidth)] += 1;
+    const maxCount = Math.max(...bins);
+    const xTicks = roundedTicks(maxTotal, 16);
+    const xEnd = xTicks[xTicks.length - 1];  // round number at or past the longest total time
+    // Room for one bar slot at every value up to xEnd, so the last label sits under its slot.
+    const span = Math.max(bins.length, Math.ceil((xEnd + 1) / binWidth)) * binWidth;
+    const x = v => left + (v / span) * plotW;
+    const y = n => top + plotH - (n / maxCount) * plotH;
+
+    for (const n of niceTicks(maxCount, 4)) {
+      el("line", { x1: left, x2: left + plotW, y1: y(n), y2: y(n), class: n === 0 ? "axis" : "grid" }, svg);
+      text(svg, left - 6, y(n) + 4, String(n), { "text-anchor": "end" });
+    }
+    const barW = plotW / (span / binWidth);
+    bins.forEach((n, i) => {
+      if (n === 0) return;
+      const gapPx = barW > 6 ? 2 : barW > 3 ? 1 : 0;  // keep a gap between bars while there's room
+      const bx = x(i * binWidth) + gapPx / 2, bw = Math.max(1, barW - gapPx), by = y(n), bh = top + plotH - by;
+      const r = Math.min(4, bw / 2, bh);
+      const d = `M${bx},${by + bh}V${by + r}Q${bx},${by} ${bx + r},${by}` +
+                `H${bx + bw - r}Q${bx + bw},${by} ${bx + bw},${by + r}V${by + bh}Z`;
+      const bar = el("path", { d, class: "bar" }, svg);
+      const lo = i * binWidth, hi = lo + binWidth - 1;
+      const range = binWidth === 1 ? `${lo}` : `${lo}–${hi}`;
+      bar.addEventListener("mousemove", evt =>
+        showTip(evt, [`took ${range} ticks`, `${n} passenger${n === 1 ? "" : "s"}`]));
+      bar.addEventListener("mouseleave", hideTip);
+    });
+    for (const t of xTicks) {
+      text(svg, x(t + 0.5), top + plotH + 16, String(t), { "text-anchor": "middle" });
+    }
+    const xTitle = binWidth === 1 ? "total time (ticks)" : `total time (ticks, ${binWidth} per bar)`;
+    text(svg, left + plotW / 2, top + plotH + 31, xTitle, { "text-anchor": "middle" });
+    const titleX = 14, titleY = top + plotH / 2;
+    text(svg, titleX, titleY, "passengers",
+         { "text-anchor": "middle", transform: `rotate(-90 ${titleX} ${titleY})` });
+
+    const refs = [
+      { value: D.totalMean, label: `mean ${D.totalMean.toFixed(2)}`, cls: "ref" },
+      { value: D.totalP95, label: `p95 ${D.totalP95}`, cls: "ref-solid" },
+    ];
+    // Each label gets its own row above the plot, so the two never overlap.
+    refs.forEach((ref, row) => {
+      const rx = x(ref.value + 0.5);
+      const labelY = top - 24 + row * 14;
+      el("line", { x1: rx, x2: rx, y1: labelY + 3, y2: top + plotH, class: ref.cls }, svg);
+      const nearRight = rx > left + plotW - 100;
+      text(svg, rx + (nearRight ? -4 : 4), labelY, ref.label,
+           { class: "label", "text-anchor": nearRight ? "end" : "start" });
+    });
+  })();
+
+  // ---- Playback ----
+  (function playback() {
+    const svg = document.getElementById("building");
+    const left = 40, top = 8, bottom = 24, plotH = 360;
+    const colW = Math.max(14, Math.min(64, (W - left) / cars));
+    const carW = Math.max(8, colW - 12);
+    const floorH = plotH / D.floors;
+    const carH = Math.max(16, Math.min(28, floorH));  // tall enough for the rider count
+    const H = top + plotH + bottom;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const floorY = f => top + plotH - (f - 0.5) * floorH;  // centre of floor f
+
+    for (const f of [1, ...niceTicks(D.floors, 6).filter(v => v > 1), D.floors]
+                     .filter((v, i, a) => a.indexOf(v) === i)) {
+      text(svg, left - 8, floorY(f) + 4, String(f), { "text-anchor": "end" });
+    }
+    const carNodes = [];
+    for (let c = 0; c < cars; c++) {
+      const cx = left + c * colW + (colW - carW) / 2;
+      el("rect", { x: cx, y: top, width: carW, height: plotH, class: "shaft" }, svg);
+      if (cars <= 30) text(svg, cx + carW / 2, top + plotH + 16, String(c), { "text-anchor": "middle" });
+      const g = el("g", {}, svg);
+      el("rect", { x: cx, y: 0, width: carW, height: carH, rx: 3, class: "car" }, g);
+      const label = carW >= 18
+        ? text(g, cx + carW / 2, carH / 2 + 4, "", { class: "car-text", "text-anchor": "middle" })
+        : null;
+      carNodes.push({ g, label });
+    }
+
+    const slider = document.getElementById("tick");
+    const tickLabel = document.getElementById("tick-label");
+    const button = document.getElementById("play");
+    slider.max = String(T);
+
+    function draw(t) {
+      for (let c = 0; c < cars; c++) {
+        // Centre on the floor, but keep the whole elevator inside its shaft.
+        const yTop = Math.min(top + plotH - carH, Math.max(top, floorY(D.positions[c][t]) - carH / 2));
+        carNodes[c].g.setAttribute("transform", `translate(0 ${yTop.toFixed(1)})`);
+        if (carNodes[c].label) carNodes[c].label.textContent = String(loads[c][t]);
+      }
+      tickLabel.value = `tick ${t} / ${T}`;
+    }
+
+    // About 20 ticks a second; long runs skip ticks so playback takes under ~30 seconds.
+    const step = Math.max(1, Math.ceil(T / 600));
+    let timer = null;
+    function stop() { clearInterval(timer); timer = null; button.textContent = "Play"; }
+    button.addEventListener("click", () => {
+      if (timer) { stop(); return; }
+      if (Number(slider.value) >= T) slider.value = "0";
+      button.textContent = "Pause";
+      timer = setInterval(() => {
+        const t = Math.min(T, Number(slider.value) + step);
+        slider.value = String(t);
+        draw(t);
+        if (t >= T) stop();
+      }, 50);
+    });
+    slider.addEventListener("input", () => { if (timer) stop(); draw(Number(slider.value)); });
+    draw(0);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -31,11 +31,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--floors", required=True, type=int, metavar="N",
                         help="number of floors in the building")
     parser.add_argument("--elevators", required=True, type=int, metavar="N",
-                        help="number of elevator cars")
+                        help="number of elevators")
     parser.add_argument("--capacity", required=True, type=int, metavar="N",
-                        help="most passengers one car can carry at once")
+                        help="most passengers one elevator can carry at once")
     parser.add_argument("--dispatcher", default="nearest", choices=sorted(DISPATCHERS),
-                        help="how requests are assigned to cars (default: nearest)")
+                        help="how requests are assigned to elevators (default: nearest)")
     return parser
 
 

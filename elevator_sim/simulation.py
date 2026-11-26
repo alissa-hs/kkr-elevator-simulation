@@ -18,6 +18,15 @@ START_FLOOR = 1
 """Assumption that every car starts at the ground floor."""
 
 
+def starvation_limit(num_floors: int, num_passengers: int) -> int:
+    """Most ticks a passenger may go undelivered (request to dropoff) before the run is stopped.
+
+    One round trip of the building (about 2 * num_floors ticks) for every
+    passenger who could be served first, plus one for the passenger's own trip.
+    """
+    return 2 * num_floors * (num_passengers + 1)
+
+
 @dataclass
 class ElevatorStats:
     """Per-car counters. Every tick counts as exactly one of moving or idle,
@@ -94,7 +103,7 @@ class Simulation:
 
         config = self.config
         positions: list[tuple[int, list[int]]] = []
-        starvation_limit = 2 * config.num_floors * (self.stream.total + 1)
+        limit = starvation_limit(config.num_floors, self.stream.total)
         t = 0
         while True:
             self._release(t)
@@ -113,7 +122,7 @@ class Simulation:
                     dispatcher_name=self.dispatcher.name,
                     elevator_stats=self.stats,
                 )
-            self._check_guards(t, starvation_limit)
+            self._check_guards(t, limit)
             for e in self.elevators:
                 e.prev_floor = e.floor
                 move(e, config.num_floors)
@@ -151,11 +160,11 @@ class Simulation:
             else:
                 stats.moving_ticks += 1
 
-    def _check_guards(self, t: int, starvation_limit: int) -> None:
+    def _check_guards(self, t: int, limit: int) -> None:
         """Stop a runaway run: no passenger may stay undelivered past the starvation limit."""
         for p in self.passengers:
-            if p.state is not PassengerState.DELIVERED and t - p.request_time > starvation_limit:
+            if p.state is not PassengerState.DELIVERED and t - p.request_time > limit:
                 raise SimulationError(
                     f"tick {t}: passenger '{p.id}' has waited {t - p.request_time} ticks, "
-                    f"over the starvation limit of {starvation_limit}"
+                    f"over the starvation limit of {limit}"
                 )

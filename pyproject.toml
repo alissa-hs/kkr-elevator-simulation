@@ -19,5 +19,8 @@ elevator-sim = "elevator_sim.cli:main"
 [tool.setuptools.packages.find]
 include = ["elevator_sim*"]
 
+[tool.setuptools.package-data]
+elevator_sim = ["report_template.html"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -10,7 +10,7 @@ from elevator_sim.cli import main
 
 SAMPLE = str(Path(__file__).parent.parent / "examples" / "sample.csv")
 SAMPLE_FLAGS = ["--input", SAMPLE, "--floors", "100", "--elevators", "2", "--capacity", "10"]
-FILES = ["positions.csv", "passengers.csv", "summary.csv", "elevators.csv"]
+FILES = ["positions.csv", "passengers.csv", "summary.csv", "elevators.csv", "report.html"]
 
 
 @pytest.fixture(autouse=True)

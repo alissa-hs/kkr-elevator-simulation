@@ -8,7 +8,7 @@ from conftest import pdf_sample_result, req, run_sim
 
 from elevator_sim.output import write_outputs
 
-FILES = ["positions.csv", "passengers.csv", "summary.csv", "elevators.csv"]
+FILES = ["positions.csv", "passengers.csv", "summary.csv", "elevators.csv", "report.html"]
 OUT = Path("output")
 
 
@@ -32,7 +32,7 @@ def read_lines(folder, name):
     return (folder / name).read_text(encoding="utf-8").splitlines()
 
 
-def test_first_run_writes_four_files_into_run_001():
+def test_first_run_writes_five_files_into_run_001():
     assert not OUT.exists()
     paths = write_outputs(pdf_sample_result())
     assert paths == [OUT / "run_001" / name for name in FILES]

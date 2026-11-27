@@ -10,7 +10,7 @@ from elevator_sim.cli import main
 
 SAMPLE = str(Path(__file__).parent.parent / "examples" / "sample.csv")
 SAMPLE_FLAGS = ["--input", SAMPLE, "--floors", "100", "--elevators", "2", "--capacity", "10"]
-FILES = ["positions.csv", "passengers.csv", "summary.csv", "elevators.csv", "report.html"]
+FILES = ["positions.csv", "passengers.csv", "summary.csv", "elevators.csv", "report.html", "run.json"]
 
 
 @pytest.fixture(autouse=True)
@@ -46,7 +46,10 @@ def test_pdf_sample_run_writes_run_folder_and_exits_0(capsys):
     code, out, err = run_cli(SAMPLE_FLAGS, capsys)
     assert code == 0
     assert err == ""
-    assert out == "Wrote " + ", ".join(f"output/run_001/{f}" for f in FILES) + "\n"
+    assert out == (
+        "Wrote " + ", ".join(f"output/run_001/{f}" for f in FILES) + "\n"
+        "Comparison: output/compare.html\n"
+    )
     assert all((Path("output/run_001") / f).is_file() for f in FILES)
     summary = (Path("output/run_001") / "summary.csv").read_text().splitlines()
     assert summary[1] == "wait,0,71,23.67,0.00,71,3,100,nearest,passenger3"

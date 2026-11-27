@@ -6,6 +6,7 @@ import argparse
 import sys
 from collections.abc import Sequence
 
+from elevator_sim.compare import write_comparison
 from elevator_sim.config import SimConfig
 from elevator_sim.dispatch import DISPATCHERS
 from elevator_sim.errors import ConfigError, InputError, SimulationError
@@ -56,6 +57,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"simulation failed: {exc}", file=sys.stderr)
         return EXIT_SIMULATION_FAILED
 
-    paths = write_outputs(result)
+    paths = write_outputs(result, input_name=args.input)
     print(f"Wrote {', '.join(str(p) for p in paths)}")
+    print(f"Comparison: {write_comparison()}")
     return EXIT_OK

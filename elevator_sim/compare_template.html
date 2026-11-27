@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dispatcher Comparison</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb;
+    --page: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --series: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface: #1a1a19;
+      --page: #0d0d0d;
+      --ink: #f0efec;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --series: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 36px 0 8px; }
+  h3 { font-size: 14px; margin: 20px 0 6px; color: var(--ink-2); }
+  .note { color: var(--ink-2); margin: 0 0 8px; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+  }
+  .group { border-top: 1px solid var(--axis); margin-top: 28px; }
+  table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 4px 14px 4px 0; text-align: right; white-space: nowrap; }
+  th:nth-child(-n+2), td:nth-child(-n+2) { text-align: left; }
+  th:nth-last-child(-n+2), td:nth-last-child(-n+2) { text-align: left; }
+  th { color: var(--ink-2); font-weight: 600; border-bottom: 1px solid var(--axis); vertical-align: bottom; }
+  td { border-bottom: 1px solid var(--grid); }
+  a { color: var(--series); }
+  code { font-size: 13px; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  svg .label { fill: var(--ink); font-size: 12px; }
+  svg .value { fill: var(--ink-2); font-size: 11px; }
+  .grid { stroke: var(--grid); stroke-width: 1; }
+  .axis { stroke: var(--axis); stroke-width: 1; }
+  .dot { fill: var(--series); fill-opacity: 0.35; }
+  .mean { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .p95 { stroke: var(--ink); stroke-width: 2; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; color: var(--ink-2); font-size: 12px; margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend svg { display: inline-block; width: auto; overflow: visible; }
+  .row-hit { fill: transparent; }
+  .row-hit:hover { fill: var(--grid); fill-opacity: 0.5; }
+  .tooltip {
+    position: fixed; pointer-events: none; display: none; z-index: 10;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    padding: 6px 8px; font-size: 12px; line-height: 1.4;
+    font-variant-numeric: tabular-nums; white-space: pre;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Dispatcher comparison</h1>
+  <p class="note">{{INTRO}}</p>
+  <p class="note">Lower is better everywhere. In each table the best value per column is in bold. Wait (request to pickup) is what the dispatcher controls most directly; total (request to dropoff) is the passenger's whole trip, including the ride.</p>
+  {{GROUPS}}
+</main>
+<div class="tooltip" id="tooltip"></div>
+
+<script type="application/json" id="compare-data">{{DATA_JSON}}</script>
+<script>
+(() => {
+  const GROUPS = JSON.parse(document.getElementById("compare-data").textContent);
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const W = 1000;
+  const tooltip = document.getElementById("tooltip");
+
+  function el(tag, attrs, parent) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function text(parent, x, y, content, attrs = {}) {
+    const t = el("text", { x, y, ...attrs }, parent);
+    t.textContent = content;
+    return t;
+  }
+  function showTip(evt, lines) {
+    tooltip.textContent = lines.join("\n");
+    tooltip.style.display = "block";
+    const pad = 14, r = tooltip.getBoundingClientRect();
+    let x = evt.clientX + pad, y = evt.clientY + pad;
+    if (x + r.width > window.innerWidth) x = evt.clientX - r.width - pad;
+    if (y + r.height > window.innerHeight) y = evt.clientY - r.height - pad;
+    tooltip.style.left = x + "px";
+    tooltip.style.top = y + "px";
+  }
+  function hideTip() { tooltip.style.display = "none"; }
+  // Round-number ticks from 0 that run past max to the next round number.
+  function roundedTicks(max, count) {
+    const raw = Math.max(1, max / count);
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw && Number.isInteger(s));
+    const end = Math.max(step, Math.ceil(max / step) * step);
+    const ticks = [];
+    for (let v = 0; v <= end; v += step) ticks.push(v);
+    return ticks;
+  }
+
+  // One row per run, one dot per passenger, on an axis shared by every run in the group.
+  for (const svg of document.querySelectorAll("svg.strip")) {
+    const runs = GROUPS[Number(svg.dataset.group)];
+    const key = svg.dataset.measure;  // "totals" or "waits"
+    const left = 250, right = 150, rowH = 40, top = 6, bottom = 34;
+    const plotW = W - left - right;
+    const H = top + runs.length * rowH + bottom;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+    const maxValue = Math.max(1, ...runs.flatMap(r => r[key]));
+    const ticks = roundedTicks(maxValue, 10);
+    const xEnd = ticks[ticks.length - 1];
+    const x = v => left + (v / xEnd) * plotW;
+    const axisY = top + runs.length * rowH;
+
+    for (const t of ticks) {
+      el("line", { x1: x(t), x2: x(t), y1: top, y2: axisY, class: t === 0 ? "axis" : "grid" }, svg);
+      text(svg, x(t), axisY + 16, String(t), { "text-anchor": "middle" });
+    }
+    el("line", { x1: left, x2: left + plotW, y1: axisY, y2: axisY, class: "axis" }, svg);
+    text(svg, left + plotW / 2, axisY + 31, key === "totals" ? "total time (ticks)" : "wait (ticks)",
+         { "text-anchor": "middle" });
+
+    runs.forEach((run, row) => {
+      const y0 = top + row * rowH, mid = y0 + rowH / 2;
+      const values = run[key], mean = run[key + "Mean"], p95 = run[key + "P95"];
+      text(svg, 0, mid + 4, run.label, { class: "label" });
+      if (values.length === 0) {
+        text(svg, left + 4, mid + 4, "no passengers", { class: "value" });
+        return;
+      }
+      // Spread dots up and down a little (same pattern every time) so equal values stay visible.
+      values.forEach((v, i) => {
+        const jitter = (((i * 0.618034) % 1) - 0.5) * (rowH - 14);
+        el("circle", { cx: x(v).toFixed(1), cy: (mid + jitter).toFixed(1), r: 3, class: "dot" }, svg);
+      });
+      el("line", { x1: x(mean), x2: x(mean), y1: y0 + 4, y2: y0 + rowH - 4, class: "mean" }, svg);
+      el("line", { x1: x(p95), x2: x(p95), y1: y0 + 4, y2: y0 + rowH - 4, class: "p95" }, svg);
+      text(svg, left + plotW + 12, mid + 4, `mean ${mean.toFixed(2)} · p95 ${p95}`, { class: "value" });
+
+      const hit = el("rect", { x: 0, y: y0, width: W, height: rowH, class: "row-hit" }, svg);
+      svg.insertBefore(hit, svg.firstChild);  // behind the dots, but still catches the hover
+      const lines = [run.label, `${values.length} passengers`, `mean ${mean.toFixed(2)}`,
+                     `p95 ${p95}`, `max ${Math.max(...values)}`];
+      hit.addEventListener("mousemove", evt => showTip(evt, lines));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+  }
+})();
+</script>
+</body>
+</html>

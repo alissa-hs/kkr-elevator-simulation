@@ -7,6 +7,7 @@ simulation itself imports io for request validation.
 from __future__ import annotations
 
 import csv
+import json
 import re
 from collections.abc import Iterable
 from pathlib import Path
@@ -23,6 +24,9 @@ POSITIONS_FILE = "positions.csv"
 PASSENGERS_FILE = "passengers.csv"
 SUMMARY_FILE = "summary.csv"
 ELEVATORS_FILE = "elevators.csv"
+RUN_INFO_FILE = "run.json"
+FROM_CODE = "(from code)"
+"""run.json's input when the run didn't come from a CSV file (e.g. simulate())."""
 
 PASSENGER_COLUMNS = (
     "id", "request_time", "source", "dest", "elevator",
@@ -35,10 +39,12 @@ SUMMARY_COLUMNS = (
 ELEVATOR_COLUMNS = ("elevator", "served", "moving_ticks", "idle_ticks", "stops", "peak_load")
 
 
-def write_outputs(result: SimulationResult) -> list[Path]:
-    """Write the four CSV files and report.html into a new ``output/run_NNN`` folder.
+def write_outputs(result: SimulationResult, input_name: str | None = None) -> list[Path]:
+    """Write the four CSV files, report.html and run.json into a new ``output/run_NNN`` folder.
 
-    Returns the five paths, CSVs first.
+    Returns the six paths, CSVs first. ``input_name`` is the requests file the run
+    came from (the CLI passes it); it is recorded in run.json so the comparison
+    page can group runs of the same input.
 
     NNN is one more than the highest existing run number, so earlier runs are kept.
     """
@@ -77,6 +83,14 @@ def write_outputs(result: SimulationResult) -> list[Path]:
         ELEVATORS_FILE: elevators,
     }
     report = build_report(result)  # built before the folder, so a failure leaves no empty run
+    config = result.config
+    run_info = {
+        "input": input_name if input_name is not None else FROM_CODE,
+        "floors": config.num_floors,
+        "elevators": config.num_elevators,
+        "capacity": config.capacity,
+        "dispatcher": summary.dispatcher_name,
+    }
 
     folder = _new_run_folder()
     paths = []
@@ -88,6 +102,10 @@ def write_outputs(result: SimulationResult) -> list[Path]:
     with open(report_path, "w", newline="", encoding="utf-8") as f:
         f.write(report)
     paths.append(report_path)
+    run_info_path = folder / RUN_INFO_FILE
+    with open(run_info_path, "w", newline="", encoding="utf-8") as f:
+        f.write(json.dumps(run_info, indent=2) + "\n")
+    paths.append(run_info_path)
     return paths
 
 

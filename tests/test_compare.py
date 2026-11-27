@@ -45,10 +45,24 @@ def embedded_data(text):
 
 def test_run_json_records_input_and_settings():
     paths = write_outputs(pdf_sample_result(), input_name="examples/sample.csv")
-    assert json.loads(paths[-1].read_text()) == {
+    info = json.loads(paths[-1].read_text())
+    fingerprint = info.pop("requests_fingerprint")
+    assert re.fullmatch(r"[0-9a-f]{16}", fingerprint)
+    assert info == {
         "input": "examples/sample.csv", "floors": 100, "elevators": 2, "capacity": 10,
         "dispatcher": "nearest",
     }
+
+
+def test_same_requests_give_the_same_fingerprint_whatever_the_file():
+    copy = Path("copy of sample.csv")
+    copy.write_text("time , id , source , dest\n0,passenger1,1,51\n\n0,passenger2,1,37\n10,passenger3,20,1\n")
+    run_cli(SAMPLE)
+    run_cli(str(copy), dispatcher="eta")
+    run_cli("./" + str(copy))
+    fingerprints = {json.loads((OUT / f"run_00{i}" / "run.json").read_text())["requests_fingerprint"]
+                    for i in (1, 2, 3)}
+    assert len(fingerprints) == 1
 
 
 def test_run_json_marks_runs_made_from_code():
@@ -80,6 +94,35 @@ def test_comparison_groups_runs_by_input_and_settings():
     assert groups[0][0]["waits"] == [0, 0, 71]
     assert groups[0][1]["waits"] == [0, 0, 43]
     assert groups[0][1]["totals"] == [50, 36, 62]
+
+
+def test_same_passengers_from_differently_named_files_are_one_group():
+    Path("renamed.csv").write_text(Path(SAMPLE).read_text())
+    run_cli(SAMPLE)
+    run_cli("renamed.csv", dispatcher="eta")
+    run_cli("./renamed.csv")
+    text = page()
+    assert text.count('<section class="group">') == 1
+    assert f"{SAMPLE}, renamed.csv, ./renamed.csv · 100 floors" in text
+
+
+def test_same_file_name_with_edited_passengers_is_a_separate_group():
+    path = Path("requests.csv")
+    path.write_text("time,id,source,dest\n0,a,1,8\n")
+    run_cli(str(path), floors=10)
+    path.write_text("time,id,source,dest\n0,a,1,8\n3,b,9,2\n")
+    run_cli(str(path), floors=10, dispatcher="eta")
+    assert page().count('<section class="group">') == 2
+
+
+def test_runs_made_before_fingerprints_group_by_input_path():
+    for name in ("run_001", "run_002"):
+        write_outputs(pdf_sample_result(), input_name="sample.csv")
+        info_path = OUT / name / "run.json"
+        info = json.loads(info_path.read_text())
+        del info["requests_fingerprint"]
+        info_path.write_text(json.dumps(info))
+    assert build_comparison(OUT).count('<section class="group">') == 1
 
 
 def test_comparison_table_shows_each_dispatcher_and_bolds_the_best():

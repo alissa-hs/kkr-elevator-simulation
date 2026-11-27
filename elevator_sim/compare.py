@@ -1,8 +1,9 @@
 """Comparison page across runs: output/compare.html.
 
 Rebuilt by the CLI after every run from the files in each output/run_NNN folder.
-Runs are grouped by input file and building settings, so each group compares
-dispatchers on the same passengers in the same building.
+Runs are grouped by their requests (a fingerprint of id, time, source and dest,
+not the file name) and building settings, so each group compares dispatchers on
+the same passengers in the same building.
 """
 
 from __future__ import annotations
@@ -56,6 +57,8 @@ class Run:
     folder: str
     number: int
     input: str
+    fingerprint: str
+    """Hash of the requests; runs made before fingerprints existed fall back to the input path."""
     floors: int
     elevators: int
     capacity: int
@@ -71,7 +74,8 @@ class Run:
 
     @property
     def group(self) -> tuple[str, int, int, int]:
-        return (self.input, self.floors, self.elevators, self.capacity)
+        """Same passengers in the same building: only the dispatcher differs."""
+        return (self.fingerprint, self.floors, self.elevators, self.capacity)
 
 
 def write_comparison(output_dir: Path = OUTPUT_DIR) -> Path:
@@ -130,6 +134,7 @@ def _load_run(number: int, folder: Path) -> Run:
         folder=folder.name,
         number=number,
         input=str(info["input"]),
+        fingerprint=str(info.get("requests_fingerprint", "path:" + str(info["input"]))),
         floors=int(info["floors"]),
         elevators=int(info["elevators"]),
         capacity=int(info["capacity"]),
@@ -150,8 +155,8 @@ def _intro(runs: list[Run], groups: dict, skipped: int) -> str:
     else:
         text = (f"{len(runs)} run{'s' if len(runs) != 1 else ''} in "
                 f"{len(groups)} group{'s' if len(groups) != 1 else ''}. "
-                "Each group is one input file in one building, so the only difference "
-                "between its runs is the dispatcher.")
+                "Each group is the same passengers in the same building, so the only "
+                "difference between its runs is the dispatcher.")
     if skipped:
         text += (f" {skipped} folder{'s were' if skipped != 1 else ' was'} skipped "
                  "(no run.json, e.g. made by an older version).")
@@ -172,7 +177,9 @@ def _number(text: str) -> float | None:
 
 def _group_section(index: int, runs: list[Run]) -> str:
     first = runs[0]
-    title = (f"{first.input} · {first.floors} floors · {first.elevators} elevators · "
+    # The same requests may have come from files with different names or paths.
+    names = ", ".join(dict.fromkeys(r.input for r in runs))
+    title = (f"{names} · {first.floors} floors · {first.elevators} elevators · "
              f"capacity {first.capacity} · {first.passengers} passengers")
 
     # Lowest value per metric (and final time) within the group, so it can be bolded.

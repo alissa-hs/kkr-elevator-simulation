@@ -7,6 +7,7 @@ simulation itself imports io for request validation.
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import re
 from collections.abc import Iterable
@@ -86,6 +87,7 @@ def write_outputs(result: SimulationResult, input_name: str | None = None) -> li
     config = result.config
     run_info = {
         "input": input_name if input_name is not None else FROM_CODE,
+        "requests_fingerprint": requests_fingerprint(result),
         "floors": config.num_floors,
         "elevators": config.num_elevators,
         "capacity": config.capacity,
@@ -107,6 +109,18 @@ def write_outputs(result: SimulationResult, input_name: str | None = None) -> li
         f.write(json.dumps(run_info, indent=2) + "\n")
     paths.append(run_info_path)
     return paths
+
+
+def requests_fingerprint(result: SimulationResult) -> str:
+    """Short hash of the requests (id, time, source, dest, in input order).
+
+    Runs with the same fingerprint had exactly the same passengers, whatever the
+    input file was called or however its path was typed. Used to group runs on
+    the comparison page.
+    """
+    requests = [[p.id, p.request_time, p.source, p.dest] for p in result.passengers]
+    text = json.dumps(requests, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
 def _new_run_folder() -> Path:

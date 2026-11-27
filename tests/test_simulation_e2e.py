@@ -57,6 +57,26 @@ def test_pdf_sample_shows_nearest_car_weakness():
     ]
 
 
+def test_pdf_sample_with_eta_spreads_passengers_across_elevators():
+    # Tick 0: passenger2 ties at 0 ticks for both elevators; elevator 0 already has
+    # passenger1, so the idle elevator 1 takes passenger2. Tick 10: passenger3 at floor 20
+    # going down is 71 ticks away for elevator 0 (up to 51 first) but 43 for elevator 1
+    # (up to 37 first), so elevator 1 takes them too.
+    requests = [req(0, "passenger1", 1, 51), req(0, "passenger2", 1, 37), req(10, "passenger3", 20, 1)]
+    result = Simulation(make_config(**SAMPLE_BUILDING, dispatcher="eta"), requests).run()
+    p = {x.id: x for x in result.passengers}
+    assert {pid: x.assigned_elevator for pid, x in p.items()} == {
+        "passenger1": 0, "passenger2": 1, "passenger3": 1,
+    }
+    assert times(p["passenger1"]) == (0, 50, 0, 50, 50)
+    assert times(p["passenger2"]) == (0, 36, 0, 36, 36)
+    assert times(p["passenger3"]) == (53, 72, 43, 19, 62)  # wait 43 instead of 71
+    assert result.final_time == 72
+    assert floors(result, 0) == list(range(1, 52)) + [51] * 22
+    assert floors(result, 1) == list(range(1, 38)) + list(range(36, 0, -1))
+    assert result.dispatcher_name == "eta"
+
+
 def test_clock_ticks_through_empty_time():
     result, p = run_sim([req(5, "p1", 1, 3)])
     assert floors(result) == [1, 1, 1, 1, 1, 1, 2, 3]

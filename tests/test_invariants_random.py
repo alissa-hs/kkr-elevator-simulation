@@ -13,6 +13,7 @@ from elevator_sim.models import PassengerState, Request
 from elevator_sim.simulation import Simulation
 
 SEEDS = range(200)
+DISPATCHERS = ["nearest", "eta"]
 
 
 def random_scenario(seed):
@@ -32,8 +33,8 @@ def random_scenario(seed):
     return settings, requests
 
 
-def run(settings, requests):
-    config = SimConfig(**settings, check_invariants=True)
+def run(settings, requests, dispatcher="nearest"):
+    config = SimConfig(**settings, dispatcher=dispatcher, check_invariants=True)
     return Simulation(config, requests).run()
 
 
@@ -66,24 +67,26 @@ def check_run(result, settings, requests):
     assert sum(s.served for s in result.elevator_stats) == len(requests)
 
 
+@pytest.mark.parametrize("dispatcher", DISPATCHERS)
 @pytest.mark.parametrize("seed", SEEDS, ids=lambda s: f"seed={s}")
-def test_random_run_satisfies_all_checks(seed):
+def test_random_run_satisfies_all_checks(seed, dispatcher):
     settings, requests = random_scenario(seed)
-    result = run(settings, requests)
+    result = run(settings, requests, dispatcher)
     check_run(result, settings, requests)
 
     # Determinism: the same scenario again gives identical results.
-    again = run(*random_scenario(seed))
+    again = run(*random_scenario(seed), dispatcher)
     assert again.positions == result.positions
     assert passenger_rows(again) == passenger_rows(result)
     assert again.elevator_stats == result.elevator_stats
 
 
-def test_burst_at_one_floor_with_capacity_one():
+@pytest.mark.parametrize("dispatcher", DISPATCHERS)
+def test_burst_at_one_floor_with_capacity_one(dispatcher):
     """Longest possible queue: one car carrying 60 people one at a time to the top."""
     settings = {"num_floors": 30, "num_elevators": 1, "capacity": 1}
     requests = [Request(0, f"p{i}", 1, 30, input_order=i) for i in range(60)]
-    result = run(settings, requests)
+    result = run(settings, requests, dispatcher)
     check_run(result, settings, requests)
 
     # Oldest first: each round trip takes 58 ticks, so passenger i waits 58 * i.
@@ -93,7 +96,8 @@ def test_burst_at_one_floor_with_capacity_one():
     assert max(waits) < starvation_limit
 
 
-def test_everyone_going_opposite_ways_from_one_floor():
+@pytest.mark.parametrize("dispatcher", DISPATCHERS)
+def test_everyone_going_opposite_ways_from_one_floor(dispatcher):
     settings = {"num_floors": 20, "num_elevators": 2, "capacity": 3}
     rng = random.Random(0)
     requests = [
@@ -101,18 +105,19 @@ def test_everyone_going_opposite_ways_from_one_floor():
                 input_order=i)
         for i in range(40)
     ]
-    result = run(settings, requests)
+    result = run(settings, requests, dispatcher)
     check_run(result, settings, requests)
 
 
-def test_two_floor_building():
+@pytest.mark.parametrize("dispatcher", DISPATCHERS)
+def test_two_floor_building(dispatcher):
     settings = {"num_floors": 2, "num_elevators": 3, "capacity": 2}
     rng = random.Random(1)
     requests = [
         Request(rng.randint(0, 30), f"p{i}", 1 + i % 2, 2 - i % 2, input_order=i)
         for i in range(40)
     ]
-    result = run(settings, requests)
+    result = run(settings, requests, dispatcher)
     check_run(result, settings, requests)
     for p in result.passengers:
         assert p.travel_time == 1

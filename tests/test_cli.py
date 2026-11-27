@@ -103,6 +103,14 @@ def test_dispatcher_flag_is_accepted(capsys):
     assert code == 0
 
 
+def test_eta_dispatcher_runs_from_the_cli(capsys):
+    code, _, _ = run_cli(SAMPLE_FLAGS + ["--dispatcher", "eta"], capsys)
+    assert code == 0
+    summary = (Path("output/run_001") / "summary.csv").read_text().splitlines()
+    assert summary[1] == "wait,0,43,14.33,0.00,43,3,72,eta,passenger3"
+    assert "Earliest arrival (eta)" in (Path("output/run_001") / "report.html").read_text()
+
+
 def test_missing_input_file_exits_2(capsys):
     code, _, err = run_cli(with_flag("--input", "nope.csv"), capsys)
     assert code == 2

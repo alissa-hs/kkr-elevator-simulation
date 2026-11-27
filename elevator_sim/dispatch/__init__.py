@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from elevator_sim.dispatch.base import Dispatcher
+from elevator_sim.dispatch.eta import EtaDispatcher
 from elevator_sim.dispatch.nearest import NearestCarDispatcher
 from elevator_sim.errors import ConfigError
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 DISPATCHERS: dict[str, type[Dispatcher]] = {
     NearestCarDispatcher.name: NearestCarDispatcher,
+    EtaDispatcher.name: EtaDispatcher,
 }
 
 
